@@ -10,18 +10,14 @@ import { EmailModule } from './email/email.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './user/entities/user.entity';
 
+require('dotenv').config({ path: '.env' });
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      password: '123456',
-      username: 'postgres',
+      url: process.env.DATABASE_URL,
       entities: [UserEntity],
-      database: 'book',
-      synchronize: true,
-      logging: true,
     }),
     AuthModule,
     UserModule,

@@ -6,6 +6,9 @@ import { EditUserDto } from './dto/edit-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { EmailService } from '../email/email.service';
 import { ProducerService } from 'src/queues/producer.service';
+
+import * as ExcelJS from 'exceljs';
+
 @Injectable()
 export class UserService {
   /**
@@ -25,7 +28,73 @@ export class UserService {
    * we have defined what are the keys we are expecting from body
    * @returns promise of user
    */
-  async createUser(CreateUserDto: CreateUserDto): Promise<UserEntity> {
+
+  async importXLS() {
+    const xlsx = require('xlsx');
+    const workbook = xlsx.readFile('upload/user-4-6-2024-11-31-40.xlsx');
+    const workbook_sheet = workbook.SheetNames;
+    let workbook_response = xlsx.utils.sheet_to_json(
+      // Step 4
+      workbook.Sheets[workbook_sheet[0]],
+    );
+    for (let i = 0; i < workbook_response.length; i++) {
+      await this.createUser({
+        email: workbook_response[i].Email,
+        firstName: workbook_response[i]['First Name'],
+        lastName: workbook_response[i]['Last Name'],
+        username: workbook_response[i]['User Name'],
+      });
+    }
+  }
+
+  async exportXLS(): Promise<ExcelJS.Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('TestExportXLS');
+
+    let data = this.userRepository.find();
+
+    worksheet.columns = [
+      { header: 'No', key: 'no' },
+      { header: 'Email', key: 'email' },
+      { header: 'First Name', key: 'firstName' },
+      { header: 'Last Name', key: 'lastName' },
+      { header: 'User Name', key: 'username' },
+    ];
+    let i = 1;
+    (await data).forEach((value) => {
+      worksheet.addRow({
+        no: i++,
+        email: value.email,
+        firstName: value.firstName,
+        lastName: value.lastName,
+        username: value.username,
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
+  }
+
+  async nowDate(): Promise<string> {
+    var d = new Date();
+
+    return (
+      d.getDate() +
+      '-' +
+      d.getMonth() +
+      '-' +
+      d.getFullYear() +
+      '-' +
+      d.getHours() +
+      '-' +
+      d.getMinutes() +
+      '-' +
+      d.getSeconds()
+    );
+  }
+
+  async createUserBatch(CreateUserDto: CreateUserDto) {
+    console.log(CreateUserDto);
     const emailData = {
       email: CreateUserDto.email,
       subject: 'Welcome to Our Community',
@@ -40,7 +109,26 @@ export class UserService {
     user.email = CreateUserDto.email;
     user.firstName = CreateUserDto.firstName;
     user.username = CreateUserDto.username;
-    return this.userRepository.save(user);
+    await this.userRepository.save(user);
+  }
+
+  async createUser(CreateUserDto: CreateUserDto): Promise<UserEntity> {
+    console.log(CreateUserDto);
+    const emailData = {
+      email: CreateUserDto.email,
+      subject: 'Welcome to Our Community',
+      html: `<p>Hello ${CreateUserDto.username},</p>
+      <p>Welcome to our community! Your account is now active.</p>
+      <p>Enjoy your time with us!</p>`,
+    };
+    await this.producerService.addToEmailQueue(emailData);
+
+    const user: UserEntity = new UserEntity();
+    user.lastName = CreateUserDto.lastName;
+    user.email = CreateUserDto.email;
+    user.firstName = CreateUserDto.firstName;
+    user.username = CreateUserDto.username;
+    return await this.userRepository.save(user);
   }
 
   /**

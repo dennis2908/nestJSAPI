@@ -6,10 +6,11 @@ import {
   UseGuards,
   Post,
   Param,
+  Res,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 // import { AuthGuard } from '@nestjs/passport';
-// import { Request } from 'express';
+import { Response } from 'express';
 import { GetUser } from '../auth/decorator';
 import { JwtGuard } from '../auth/guard';
 import { EditUserDto, CreateUserDto } from './dto';
@@ -42,5 +43,25 @@ export class UserController {
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     return this.userService.createUser(createUserDto);
+  }
+
+  @Get('xls')
+  async exportXLS(@Res() res: Response) {
+    const buffer = await this.userService.exportXLS();
+    const filename = await this.userService.nowDate();
+    res.header(
+      'Content-Disposition',
+      'attachment; filename=user-' + filename + '.xlsx',
+    );
+    res.type(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.send(buffer);
+  }
+
+  @Get('import-xls')
+  async importXLS(@Res() res: Response) {
+    await this.userService.importXLS();
+    res.send('successfully import data');
   }
 }

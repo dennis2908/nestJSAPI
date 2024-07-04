@@ -16,14 +16,19 @@ export class ConsumerService implements OnModuleInit {
     try {
       await this.channelWrapper.addSetup(async (channel: ConfirmChannel) => {
         await channel.assertQueue('emailQueue', { durable: true });
-        await channel.consume('emailQueue', async (message) => {
-          if (message) {
-            const content = JSON.parse(message.content.toString());
-            this.logger.log('Received message:', content);
-            await this.emailService.sendEmail(content);
-            channel.ack(message);
-          }
-        });
+        channel.prefetch(1);
+        await channel.consume(
+          'emailQueue',
+          async (message) => {
+            if (message) {
+              const content = JSON.parse(message.content.toString());
+              this.logger.log('Received message:', content);
+              await this.emailService.sendEmail(content);
+              channel.ack(message);
+            }
+          },
+          { noAck: false },
+        );
       });
       this.logger.log('Consumer service started and listening for messages.');
     } catch (err) {

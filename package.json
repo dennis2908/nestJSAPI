@@ -51,6 +51,7 @@
     "argon2": "^0.40.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "exceljs": "^4.4.0",
     "javascript-stringify": "^2.1.0",
     "nodemailer": "^6.9.14",
     "passport": "^0.7.0",
@@ -60,7 +61,8 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "stringify": "^5.2.0",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

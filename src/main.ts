@@ -15,6 +15,11 @@ async function bootstrap() {
       prefetchCount: 1,
     },
   });
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
