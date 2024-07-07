@@ -33,6 +33,16 @@ export class UserController {
     return user;
   }
 
+  @Get()
+  findAll() {
+    return this.userService.findAllUser();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.userService.viewUser(+id);
+  }
+
   // @UseGuards(JwtGuard)
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateUserDto: EditUserDto) {

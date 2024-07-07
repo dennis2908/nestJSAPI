@@ -9,11 +9,13 @@ import { CronjobsModule } from './cronjobs/cronjobs.module';
 import { EmailModule } from './email/email.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './user/entities/user.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 
 require('dotenv').config({ path: '.env' });
 
 @Module({
   imports: [
+    CacheModule.register(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,

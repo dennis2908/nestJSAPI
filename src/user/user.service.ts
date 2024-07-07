@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -6,6 +6,8 @@ import { EditUserDto } from './dto/edit-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { EmailService } from '../email/email.service';
 import { ProducerService } from 'src/queues/producer.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 import * as ExcelJS from 'exceljs';
 
@@ -20,6 +22,7 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
     private emailService: EmailService,
     private producerService: ProducerService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   /**
@@ -93,6 +96,11 @@ export class UserService {
     );
   }
 
+  randomStringAsBase64Url(size): string {
+    const crypto = require('crypto');
+    return crypto.randomBytes(size).toString('base64url');
+  }
+
   async createUserBatch(CreateUserDto: CreateUserDto) {
     console.log(CreateUserDto);
     const emailData = {
@@ -135,8 +143,13 @@ export class UserService {
    * this function is used to get all the user's list
    * @returns promise of array of users
    */
-  findAllBook(): Promise<UserEntity[]> {
-    return this.userRepository.find();
+  async findAllUser(): Promise<UserEntity[]> {
+    const data = await this.userRepository.find();
+    const token = this.randomStringAsBase64Url(32);
+    await this.cacheManager.set(token, JSON.stringify(data));
+    const value = await this.cacheManager.get(token);
+    console.log(value);
+    return data;
   }
 
   /**
@@ -144,7 +157,12 @@ export class UserService {
    * @param id is type of number, which represent the id of user.
    * @returns promise of user
    */
-  viewBook(id: number): Promise<UserEntity> {
+  async viewUser(id: number): Promise<UserEntity> {
+    const data = await this.userRepository.findOneBy({ id });
+    const token = this.randomStringAsBase64Url(32);
+    await this.cacheManager.set(token, JSON.stringify(data));
+    const value = await this.cacheManager.get(token);
+    console.log(value);
     return this.userRepository.findOneBy({ id });
   }
 
