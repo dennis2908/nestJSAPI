@@ -8,6 +8,8 @@ import { EmailService } from '../email/email.service';
 import { ProducerService } from 'src/queues/producer.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { PusherService } from 'src/pusher/pusher.service';
+import { Pusher } from 'src/pusher/pusher';
 
 import * as ExcelJS from 'exceljs';
 
@@ -21,6 +23,7 @@ export class UserService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     private emailService: EmailService,
+    private pusherService: PusherService,
     private producerService: ProducerService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
@@ -41,6 +44,7 @@ export class UserService {
       workbook.Sheets[workbook_sheet[0]],
     );
     for (let i = 0; i < workbook_response.length; i++) {
+      console.log(workbook_response[0]);
       await this.createUser({
         email: workbook_response[i].Email,
         firstName: workbook_response[i]['First Name'],
@@ -101,25 +105,6 @@ export class UserService {
     return crypto.randomBytes(size).toString('base64url');
   }
 
-  async createUserBatch(CreateUserDto: CreateUserDto) {
-    console.log(CreateUserDto);
-    const emailData = {
-      email: CreateUserDto.email,
-      subject: 'Welcome to Our Community',
-      html: `<p>Hello ${CreateUserDto.username},</p>
-      <p>Welcome to our community! Your account is now active.</p>
-      <p>Enjoy your time with us!</p>`,
-    };
-    await this.producerService.addToEmailQueue(emailData);
-
-    const user: UserEntity = new UserEntity();
-    user.lastName = CreateUserDto.lastName;
-    user.email = CreateUserDto.email;
-    user.firstName = CreateUserDto.firstName;
-    user.username = CreateUserDto.username;
-    await this.userRepository.save(user);
-  }
-
   async createUser(CreateUserDto: CreateUserDto): Promise<UserEntity> {
     console.log(CreateUserDto);
     const emailData = {
@@ -136,6 +121,10 @@ export class UserService {
     user.email = CreateUserDto.email;
     user.firstName = CreateUserDto.firstName;
     user.username = CreateUserDto.username;
+
+    let notify = new Pusher('upload_data');
+
+    this.pusherService.create(notify);
     return await this.userRepository.save(user);
   }
 

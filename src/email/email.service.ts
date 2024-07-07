@@ -16,7 +16,7 @@ export class EmailService {
       });
       return emailSend;
     } catch (error) {
-      throw new HttpException('Error', HttpStatus.INTERNAL_SERVER_ERROR);
+      // throw new HttpException('Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

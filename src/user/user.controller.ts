@@ -38,6 +38,12 @@ export class UserController {
     return this.userService.findAllUser();
   }
 
+  @Get('import-xls')
+  async importXLS(@Res() res: Response) {
+    await this.userService.importXLS();
+    res.send('successfully import data');
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.viewUser(+id);
@@ -67,11 +73,5 @@ export class UserController {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
     res.send(buffer);
-  }
-
-  @Get('import-xls')
-  async importXLS(@Res() res: Response) {
-    await this.userService.importXLS();
-    res.send('successfully import data');
   }
 }
