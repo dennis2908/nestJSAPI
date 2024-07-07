@@ -10,12 +10,17 @@ import { EmailModule } from './email/email.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './user/entities/user.entity';
 import { CacheModule } from '@nestjs/cache-manager';
+import { MongooseModule } from '@nestjs/mongoose';
+import { LogSchema } from 'src/mongo/mongo.schema';
 
 require('dotenv').config({ path: '.env' });
 
 @Module({
   imports: [
     CacheModule.register(),
+    MongooseModule.forRoot(process.env.MONGO_URL, {
+      dbName: process.env.MONGO_DB,
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,

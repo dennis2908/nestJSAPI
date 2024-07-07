@@ -10,8 +10,13 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { PusherService } from 'src/pusher/pusher.service';
 import { Pusher } from 'src/pusher/pusher';
+import { InjectModel } from '@nestjs/mongoose';
+import { CreateLogDto } from 'src/mongo/create-log.dto';
+import { Model } from 'mongoose';
+import { ILog } from 'src/mongo/mongo.interface';
 
 import * as ExcelJS from 'exceljs';
+import { table } from 'console';
 
 @Injectable()
 export class UserService {
@@ -26,6 +31,7 @@ export class UserService {
     private pusherService: PusherService,
     private producerService: ProducerService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @InjectModel('Log') private logModel: Model<ILog>,
   ) {}
 
   /**
@@ -125,7 +131,17 @@ export class UserService {
     let notify = new Pusher('upload_data');
 
     this.pusherService.create(notify);
+    await this.createLog({
+      type: 'save operation',
+      table: 'user',
+      createdTime: await this.nowDate(),
+    });
     return await this.userRepository.save(user);
+  }
+
+  async createLog(createLogtDto: CreateLogDto): Promise<ILog> {
+    const newLog = new this.logModel(createLogtDto);
+    return newLog.save();
   }
 
   /**

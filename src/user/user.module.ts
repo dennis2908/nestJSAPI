@@ -11,6 +11,8 @@ import { PusherService } from 'src/pusher/pusher.service';
 import { RedisOptions } from 'src/configs/app-options.constants';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
+import { LogSchema } from 'src/mongo/mongo.schema';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { ConfigModule } from '@nestjs/config';
     EmailModule,
     ConfigModule.forRoot({ isGlobal: true }),
     CacheModule.registerAsync(RedisOptions),
+    MongooseModule.forFeature([{ name: 'Log', schema: LogSchema }]),
   ],
   controllers: [UserController],
   providers: [
