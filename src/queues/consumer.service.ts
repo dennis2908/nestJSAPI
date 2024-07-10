@@ -3,6 +3,8 @@ import amqp, { ChannelWrapper } from 'amqp-connection-manager';
 import { ConfirmChannel } from 'amqplib';
 import { EmailService } from 'src/email/email.service';
 
+import { Queue, Worker } from 'bullmq';
+
 @Injectable()
 export class ConsumerService implements OnModuleInit {
   private channelWrapper: ChannelWrapper;
@@ -24,6 +26,31 @@ export class ConsumerService implements OnModuleInit {
               const content = JSON.parse(message.content.toString());
               this.logger.log('Received message:', content);
               await this.emailService.sendEmail(content);
+
+              const redisOptions = { host: 'localhost', port: 6379 };
+
+              const EmailUser = new Queue('EmailUser', {
+                connection: redisOptions,
+              });
+
+              const job = await EmailUser.add('EmailUser', content, {
+                delay: 2000,
+              });
+              const worker = new Worker(
+                'EmailUser',
+                async (data) => {
+                  await this.emailService.sendEmail(data.data);
+                },
+                { connection: redisOptions },
+              );
+
+              worker.on('completed', (job) => {
+                console.log(`Job ${job.id} completed successfully`);
+              });
+
+              worker.on('failed', (job, err) => {
+                console.error(`Job ${job.id} failed with error ${err.message}`);
+              });
               channel.ack(message);
             }
           },
